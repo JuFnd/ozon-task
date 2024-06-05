@@ -39,25 +39,25 @@ func ParseFlagsAndReadYAMLFile[T any](fileName string, defaultFilePath string, f
 }
 
 func ReadAuthAppConfig() (*variables.AppConfig, error) {
-	return ParseFlagsAndReadYAMLFile[variables.AppConfig]("auth_config_path", "../../configs/AuthorizationAppConfig.yml", flag.CommandLine)
+	return ParseFlagsAndReadYAMLFile[variables.AppConfig]("auth_config_path", "configs/AuthorizationAppConfig.yml", flag.CommandLine)
 }
 
 func ReadGrpcConfig() (*variables.GrpcConfig, error) {
-	return ParseFlagsAndReadYAMLFile[variables.GrpcConfig]("grpc_config_path", "../../configs/GrpcConfig.yml", flag.CommandLine)
+	return ParseFlagsAndReadYAMLFile[variables.GrpcConfig]("grpc_config_path", "configs/GrpcConfig.yml", flag.CommandLine)
 }
 
 func ReadPostsAppConfig() (*variables.AppConfig, error) {
-	return ParseFlagsAndReadYAMLFile[variables.AppConfig]("posts_config_path", "../../configs/PostsAppConfig.yml", flag.CommandLine)
+	return ParseFlagsAndReadYAMLFile[variables.AppConfig]("posts_config_path", "configs/PostsAppConfig.yml", flag.CommandLine)
 }
 
 func ReadRelationalAuthDataBaseConfig() (*variables.RelationalDataBaseConfig, error) {
-	return ParseFlagsAndReadYAMLFile[variables.RelationalDataBaseConfig]("sql_config_auth_path", "../../configs/AuthorizationSqlDataBaseConfig.yml", flag.CommandLine)
+	return ParseFlagsAndReadYAMLFile[variables.RelationalDataBaseConfig]("sql_config_auth_path", "configs/AuthorizationSqlDataBaseConfig.yml", flag.CommandLine)
 }
 
 func ReadRelationalPostsDataBaseConfig() (*variables.RelationalDataBaseConfig, error) {
-	return ParseFlagsAndReadYAMLFile[variables.RelationalDataBaseConfig]("sql_config_films_path", "../../configs/PostsSqlDataBaseConfig.yml", flag.CommandLine)
+	return ParseFlagsAndReadYAMLFile[variables.RelationalDataBaseConfig]("sql_config_films_path", "configs/PostsSqlDataBaseConfig.yml", flag.CommandLine)
 }
 
 func ReadCacheDatabaseConfig() (*variables.CacheDataBaseConfig, error) {
-	return ParseFlagsAndReadYAMLFile[variables.CacheDataBaseConfig]("cache_config_path", "../../configs/AuthorizationCacheDataBaseConfig.yml", flag.CommandLine)
+	return ParseFlagsAndReadYAMLFile[variables.CacheDataBaseConfig]("cache_config_path", "configs/AuthorizationCacheDataBaseConfig.yml", flag.CommandLine)
 }

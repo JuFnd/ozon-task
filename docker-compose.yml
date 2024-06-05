@@ -1,0 +1,26 @@
+version: '3'
+services:
+  posts:
+    build:
+      context: .
+      dockerfile: posts_service.Dockerfile
+    ports:
+      - "8081:8081"
+
+    networks:
+      - net
+
+  authorization:
+    build:
+      context: .
+      dockerfile: authorization_service.Dockerfile
+    ports:
+      - "8080:8080"
+      - "50051:50051"
+
+    networks:
+      - net
+
+networks:
+  net:
+    driver: bridge
