@@ -20,9 +20,9 @@ RUN service postgresql start && \
         psql -c "CREATE USER boss WITH superuser login password 'boss';" && \
         psql -c "ALTER ROLE boss WITH PASSWORD 'boss';" && \
         createdb -O boss auth_service && \
-        createdb -O boss films_service && \
+        createdb -O boss posts_service && \
         psql -d auth_service -f /opt/database/auth_service_migrations.sql && \
-        psql -d posts_service -f /opt/database/films_service_migrations.sql
+        psql -d posts_service -f /opt/database/posts_service_migrations.sql
 
 VOLUME ["/etc/postgresql", "/var/log/postgresql", "/var/lib/postgresql"]
 
