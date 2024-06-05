@@ -1,0 +1,32 @@
+type User {
+  id: ID!
+  login: String!
+}
+
+type Post {
+  id: ID!
+  content: String!
+  created_at:String!
+  author: User
+  isCommented: Boolean
+}
+
+type Comment {
+  id: ID!
+  content: String!
+  author: User!
+  post: Post!
+  parent_id: ID!
+  created_at: String!
+}
+
+type Query {
+  queryGetPosts(limit: Int, offset: Int): [Post!]!
+  queryGetPost(id: ID!): Post
+  queryGetComments(postId: ID!, limit: Int, offset: Int): [Comment!]!
+}
+
+type Mutation {
+  mutationAddPost(data: String!, isCommented: Boolean): Post
+  mutationAddComment(postId: ID!, data:String!, parent_id: ID): Comment
+}

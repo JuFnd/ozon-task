@@ -5,9 +5,12 @@ import (
 	"database/sql"
 	"fmt"
 	"log/slog"
-	"ozon-task/pkg/models"
 	"ozon-task/pkg/variables"
+	"ozon-task/services/posts/delivery/graph/model"
+	"strconv"
 	"time"
+
+	_ "github.com/jackc/pgx/stdlib"
 )
 
 type ProfileRelationalRepository struct {
@@ -67,7 +70,7 @@ func (repository *ProfileRelationalRepository) pingDb(timer uint32, logger *slog
 	logger.Error(variables.SqlMaxPingRetriesError, err)
 	return fmt.Errorf(fmt.Sprintf(variables.SqlMaxPingRetriesError+" %v", err))
 }
-func (repository *ProfileRelationalRepository) GetPosts(ctx context.Context, limit int, offset int) ([]models.Post, error) {
+func (repository *ProfileRelationalRepository) GetPosts(ctx context.Context, limit int, offset int) ([]*model.Post, error) {
 	query := "SELECT id, user_id, content, created_at, comments_allowed FROM posts LIMIT $1 OFFSET $2"
 	rows, err := repository.db.Query(query, limit, offset)
 	if err != nil {
@@ -75,36 +78,39 @@ func (repository *ProfileRelationalRepository) GetPosts(ctx context.Context, lim
 	}
 	defer rows.Close()
 
-	var posts []models.Post
+	var posts []*model.Post
 	for rows.Next() {
-		var post models.Post
-		err := rows.Scan(&post.ID, &post.UserID, &post.Content, &post.CreatedAt, &post.CommentsAllowed)
+		var post model.Post
+		err := rows.Scan(&post.ID, &post.Content, &post.CreatedAt, &post.IsCommented)
 		if err != nil {
 			return nil, err
 		}
-		posts = append(posts, post)
+		posts = append(posts, &post)
 	}
 
 	return posts, nil
 }
 
-func (repository *ProfileRelationalRepository) GetPostByID(ctx context.Context, id int) (*models.Post, error) {
+func (repository *ProfileRelationalRepository) GetPostByID(ctx context.Context, id int) (*model.Post, error) {
 	query := "SELECT id, user_id, content, created_at, comments_allowed FROM posts WHERE id = $1"
 	row := repository.db.QueryRow(query, id)
 
-	var post models.Post
-	err := row.Scan(&post.ID, &post.UserID, &post.Content, &post.CreatedAt, &post.CommentsAllowed)
+	var post model.Post
+	var user model.User
+	var userId int
+	err := row.Scan(&post.ID, &userId, &post.Content, &post.CreatedAt, &post.IsCommented)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, nil
 		}
 		return nil, err
 	}
-
+	user.ID = strconv.Itoa(userId)
+	post.Author = &user
 	return &post, nil
 }
 
-func (repository *ProfileRelationalRepository) GetCommentsByPostID(ctx context.Context, postID int, limit int, offset int) ([]models.Comment, error) {
+func (repository *ProfileRelationalRepository) GetCommentsByPostID(ctx context.Context, postID int, limit int, offset int) ([]*model.Comment, error) {
 	query := "SELECT id, user_id, post_id, parent_id, content, created_at FROM comments WHERE post_id = $1 LIMIT $2 OFFSET $3"
 	rows, err := repository.db.Query(query, postID, limit, offset)
 	if err != nil {
@@ -112,53 +118,61 @@ func (repository *ProfileRelationalRepository) GetCommentsByPostID(ctx context.C
 	}
 	defer rows.Close()
 
-	var comments []models.Comment
+	var comments []*model.Comment
 	for rows.Next() {
-		var comment models.Comment
-		err := rows.Scan(&comment.ID, &comment.UserID, &comment.PostID, &comment.ParentID, &comment.Content, &comment.CreatedAt)
+		var comment model.Comment
+		var user model.User
+		var post model.Post
+		var postId int
+		var userId int
+		err := rows.Scan(&comment.ID, &userId, &postId, &comment.ParentID, &comment.Content, &comment.CreatedAt)
 		if err != nil {
 			return nil, err
 		}
-		comments = append(comments, comment)
+		user.ID = strconv.Itoa(userId)
+		post.ID = strconv.Itoa(postId)
+		comment.Author = &user
+		comment.Post = &post
+		comments = append(comments, &comment)
 	}
 
 	return comments, nil
 }
 
-func (repository *ProfileRelationalRepository) AddPost(ctx context.Context, data string, userId int, isCommented bool) (*models.Post, error) {
+func (repository *ProfileRelationalRepository) AddPost(ctx context.Context, data string, user *model.User, isCommented bool) (*model.Post, error) {
 	query := "INSERT INTO posts (user_id, content, created_at, comments_allowed) VALUES ($1, $2, $3, $4) RETURNING id"
 	var postID int
-	err := repository.db.QueryRow(query, 0, data, time.Now(), isCommented).Scan(&postID)
+	err := repository.db.QueryRow(query, user.ID, data, time.Now(), isCommented).Scan(&postID)
 	if err != nil {
 		return nil, err
 	}
 
-	post := &models.Post{
-		ID:              postID,
-		UserID:          userId,
-		Content:         data,
-		CreatedAt:       time.Now(),
-		CommentsAllowed: isCommented,
+	post := &model.Post{
+		ID:          strconv.Itoa(postID),
+		Content:     data,
+		CreatedAt:   time.Now().String(),
+		IsCommented: &isCommented,
 	}
 
 	return post, nil
 }
 
-func (repository *ProfileRelationalRepository) AddComment(ctx context.Context, postID int, userId int, data string, parentID int) (*models.Comment, error) {
+func (repository *ProfileRelationalRepository) AddComment(ctx context.Context, post *model.Post, user *model.User, data string, parentID int) (*model.Comment, error) {
 	query := "INSERT INTO comments (user_id, post_id, parent_id, content, created_at) VALUES ($1, $2, $3, $4, $5) RETURNING id"
 	var commentID int
-	err := repository.db.QueryRow(query, userId, postID, parentID, data, time.Now()).Scan(&commentID)
+	err := repository.db.QueryRow(query, user.ID, post.ID, parentID, data, time.Now()).Scan(&commentID)
 	if err != nil {
 		return nil, err
 	}
+	fmt.Println(user.ID, post.ID, parentID, data, commentID)
 
-	comment := &models.Comment{
-		ID:        commentID,
-		UserID:    userId,
-		PostID:    postID,
-		ParentID:  parentID,
+	comment := &model.Comment{
+		ID:        strconv.Itoa(commentID),
+		ParentID:  strconv.Itoa(parentID),
+		Author:    user,
+		Post:      post,
 		Content:   data,
-		CreatedAt: time.Now(),
+		CreatedAt: time.Now().String(),
 	}
 
 	return comment, nil

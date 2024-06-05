@@ -5,8 +5,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"log/slog"
-	"ozon-task/pkg/models"
+	"ozon-task/pkg/util"
 	"ozon-task/pkg/variables"
+	"ozon-task/services/posts/delivery/graph/model"
 	"strconv"
 	"time"
 
@@ -90,31 +91,31 @@ func GetPostsRepository(postsConfig *variables.CacheDataBaseConfig, logger *slog
 	return postsRedisRepository, nil
 }
 
-func (repo *PostsCacheRepository) GetPosts(ctx context.Context, limit int, offset int) ([]models.Post, error) {
+func (repo *PostsCacheRepository) GetPosts(ctx context.Context, limit int, offset int) ([]*model.Post, error) {
 	keys, err := repo.postsRedisClient.Keys("post:*").Result()
 	if err != nil {
 		return nil, err
 	}
 
-	var posts []models.Post
+	var posts []*model.Post
 	for _, key := range keys {
 		val, err := repo.postsRedisClient.Get(key).Result()
 		if err != nil {
 			return nil, err
 		}
 
-		var post models.Post
+		var post model.Post
 		err = json.Unmarshal([]byte(val), &post)
 		if err != nil {
 			return nil, err
 		}
-		posts = append(posts, post)
+		posts = append(posts, &post)
 	}
 
 	return posts, nil
 }
 
-func (repo *PostsCacheRepository) GetPostByID(ctx context.Context, id int) (*models.Post, error) {
+func (repo *PostsCacheRepository) GetPostByID(ctx context.Context, id int) (*model.Post, error) {
 	key := "post:" + strconv.Itoa(id)
 	val, err := repo.postsRedisClient.Get(key).Result()
 	if err == redis.Nil {
@@ -123,7 +124,7 @@ func (repo *PostsCacheRepository) GetPostByID(ctx context.Context, id int) (*mod
 		return nil, err
 	}
 
-	var post models.Post
+	var post model.Post
 	err = json.Unmarshal([]byte(val), &post)
 	if err != nil {
 		return nil, err
@@ -132,36 +133,37 @@ func (repo *PostsCacheRepository) GetPostByID(ctx context.Context, id int) (*mod
 	return &post, nil
 }
 
-func (repo *PostsCacheRepository) GetCommentsByPostID(ctx context.Context, postID int, limit int, offset int) ([]models.Comment, error) {
+func (repo *PostsCacheRepository) GetCommentsByPostID(ctx context.Context, postID int, limit int, offset int) ([]*model.Comment, error) {
 	keys, err := repo.postsRedisClient.Keys("comment:" + strconv.Itoa(postID) + ":*").Result()
 	if err != nil {
 		return nil, err
 	}
 
-	var comments []models.Comment
+	var comments []*model.Comment
 	for _, key := range keys {
 		val, err := repo.postsRedisClient.Get(key).Result()
 		if err != nil {
 			return nil, err
 		}
 
-		var comment models.Comment
+		var comment model.Comment
 		err = json.Unmarshal([]byte(val), &comment)
 		if err != nil {
 			return nil, err
 		}
-		comments = append(comments, comment)
+		comments = append(comments, &comment)
 	}
 
 	return comments, nil
 }
 
-func (repo *PostsCacheRepository) AddPost(ctx context.Context, data string, userId int, isCommented bool) (*models.Post, error) {
-	post := &models.Post{
-		UserID:          userId,
-		Content:         data,
-		CommentsAllowed: isCommented,
-		CreatedAt:       time.Now(),
+func (repo *PostsCacheRepository) AddPost(ctx context.Context, data string, user *model.User, isCommented bool) (*model.Post, error) {
+	post := &model.Post{
+		ID:          strconv.Itoa(util.RandInt()),
+		Author:      user,
+		Content:     data,
+		IsCommented: &isCommented,
+		CreatedAt:   time.Now().String(),
 	}
 
 	postBytes, err := json.Marshal(post)
@@ -169,7 +171,7 @@ func (repo *PostsCacheRepository) AddPost(ctx context.Context, data string, user
 		return nil, err
 	}
 
-	key := "post:" + strconv.Itoa(post.ID)
+	key := "post:" + post.ID
 	err = repo.postsRedisClient.Set(key, postBytes, time.Duration(time.Hour*24)).Err()
 	if err != nil {
 		return nil, err
@@ -178,13 +180,14 @@ func (repo *PostsCacheRepository) AddPost(ctx context.Context, data string, user
 	return post, nil
 }
 
-func (repo *PostsCacheRepository) AddComment(ctx context.Context, postID int, userId int, data string, parentID int) (*models.Comment, error) {
-	comment := &models.Comment{
-		UserID:    userId,
-		PostID:    postID,
-		ParentID:  parentID,
+func (repo *PostsCacheRepository) AddComment(ctx context.Context, post *model.Post, user *model.User, data string, parentID int) (*model.Comment, error) {
+	comment := &model.Comment{
+		ID:        strconv.Itoa(util.RandInt()),
+		Author:    user,
+		Post:      post,
+		ParentID:  strconv.Itoa(parentID),
 		Content:   data,
-		CreatedAt: time.Now(),
+		CreatedAt: time.Now().String(),
 	}
 
 	commentBytes, err := json.Marshal(comment)
@@ -192,7 +195,7 @@ func (repo *PostsCacheRepository) AddComment(ctx context.Context, postID int, us
 		return nil, err
 	}
 
-	key := "comment:" + strconv.Itoa(postID) + ":" + strconv.Itoa(comment.ID)
+	key := "comment:" + post.ID + ":" + comment.ID
 	err = repo.postsRedisClient.Set(key, commentBytes, time.Duration(time.Hour*24)).Err()
 	if err != nil {
 		return nil, err

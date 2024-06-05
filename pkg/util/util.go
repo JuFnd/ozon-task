@@ -71,6 +71,11 @@ func RandStringRunes(seed int) string {
 	return string(symbols)
 }
 
+func RandInt() int {
+	rand.Seed(time.Now().UnixNano())
+	return rand.Intn(1000000000)
+}
+
 func HashPassword(password string) []byte {
 	hashPassword := sha512.Sum512([]byte(password))
 	passwordByteSlice := hashPassword[:]

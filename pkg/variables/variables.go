@@ -53,7 +53,8 @@ const (
 // Configs types
 type (
 	AppConfig struct {
-		Address string `yaml:"address"`
+		Address  string `yaml:"address"`
+		InMemory bool   `yaml:"inMemory"`
 	}
 
 	CacheDataBaseConfig struct {

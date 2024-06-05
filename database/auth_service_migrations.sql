@@ -1,19 +1,3 @@
--- Удаление внешних ключей
-ALTER TABLE profile_role
-    DROP CONSTRAINT IF EXISTS fk_profile,
-    DROP CONSTRAINT IF EXISTS fk_role;
-
--- Удаление таблицы profile
-DROP TABLE IF EXISTS profile;
-
--- Удаление таблицы role
-DROP TABLE IF EXISTS role;
-
--- Удаление таблицы password
-DROP TABLE IF EXISTS password;
-
--- Удаление таблицы profile_role
-DROP TABLE IF EXISTS profile_role;
 
 -- Создание таблицы password
 CREATE TABLE password (
@@ -44,9 +28,5 @@ CREATE TABLE role (
                       value TEXT
 );
 
--- Добавление внешних ключей к таблице profile_role
-ALTER TABLE profile_role
-    ADD CONSTRAINT fk_profile FOREIGN KEY (profile_id) REFERENCES profile (id),
-    ADD CONSTRAINT fk_role FOREIGN KEY (role_id) REFERENCES role (id);
 
 INSERT INTO role(value) VALUES ('user'), ('admin');
