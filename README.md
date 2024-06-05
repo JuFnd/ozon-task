@@ -1,4 +1,9 @@
 # ozon-task
+### Запуск
+```
+docker-compose up
+```
+
 ### Схема проекта
 ![изображение](https://github.com/JuFnd/ozon-task/assets/109366718/319d945a-f0ab-47ee-8fad-078871b4b602)
 
