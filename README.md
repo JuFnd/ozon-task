@@ -27,6 +27,15 @@
         - БД Кэширования: Redis
 
    - Примеры запросов:
+     - Регистрация
+       ![изображение](https://github.com/JuFnd/ozon-task/assets/109366718/064c2b64-97a3-4e4c-b8a1-47a316d25a20)
+
+     - Авторизация
+       ![изображение](https://github.com/JuFnd/ozon-task/assets/109366718/2737acbd-eebc-40e5-ac7f-fe9f17f8a9a6)
+
+     - Выход из аккаунта
+       ![изображение](https://github.com/JuFnd/ozon-task/assets/109366718/29320114-ac6d-4b80-a09b-f8e161a3d45a)
+
      - Создание постов с конфигурированием комментариев(разрешены/запрещены)
      ![bkg114-k9gE](https://github.com/JuFnd/ozon-task/assets/109366718/165b616c-e4a4-4c96-a3cd-89cf8b8e2390)
      ![LGRcAuTlJho](https://github.com/JuFnd/ozon-task/assets/109366718/c3993618-513d-4ca3-9ae0-00460595eaef)
